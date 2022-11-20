@@ -1,8 +1,9 @@
-//Project Type
+// Project Type
 enum ProjectStatus {
 	Active,
 	Finished,
 }
+
 class Project {
 	constructor(
 		public id: string,
@@ -13,11 +14,12 @@ class Project {
 	) {}
 }
 
-//project state management
+// Project State Management
 type Listener<T> = (items: T[]) => void;
 
 class State<T> {
 	protected listeners: Listener<T>[] = [];
+
 	addListener(listenerFn: Listener<T>) {
 		this.listeners.push(listenerFn);
 	}
@@ -50,7 +52,7 @@ class ProjectState extends State<Project> {
 
 const projectState = ProjectState.getInstance();
 
-//validation
+// Validation
 interface Validatable {
 	value: string | number;
 	required?: boolean;
@@ -74,16 +76,14 @@ function validate(validatableInput: Validatable) {
 	if (validatableInput.min != null && typeof validatableInput.value === 'number') {
 		isValid = isValid && validatableInput.value >= validatableInput.min;
 	}
-
 	if (validatableInput.max != null && typeof validatableInput.value === 'number') {
 		isValid = isValid && validatableInput.value <= validatableInput.max;
 	}
-
 	return isValid;
 }
 
-//autobind decorator
-function autobind(_target: any, _methodName: string, descriptor: PropertyDescriptor) {
+// autobind decorator
+function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
 	const originalMethod = descriptor.value;
 	const adjDescriptor: PropertyDescriptor = {
 		configurable: true,
@@ -95,7 +95,7 @@ function autobind(_target: any, _methodName: string, descriptor: PropertyDescrip
 	return adjDescriptor;
 }
 
-//component base class
+// Component Base Class
 abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 	templateElement: HTMLTemplateElement;
 	hostElement: T;
@@ -104,12 +104,13 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 	constructor(templateId: string, hostElementId: string, insertAtStart: boolean, newElementId?: string) {
 		this.templateElement = document.getElementById(templateId)! as HTMLTemplateElement;
 		this.hostElement = document.getElementById(hostElementId)! as T;
-		const importedNode = document.importNode(this.templateElement.content, true);
 
+		const importedNode = document.importNode(this.templateElement.content, true);
 		this.element = importedNode.firstElementChild as U;
 		if (newElementId) {
 			this.element.id = newElementId;
 		}
+
 		this.attach(insertAtStart);
 	}
 
@@ -117,36 +118,18 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
 		this.hostElement.insertAdjacentElement(insertAtBeginning ? 'afterbegin' : 'beforeend', this.element);
 	}
 
-	abstract configure?(): void;
+	abstract configure(): void;
 	abstract renderContent(): void;
 }
 
-//ProjectItem Class
-class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> {
-	private project: Project;
-
-	constructor(hostId: string, project: Project) {
-		super('single-project', hostId, false, project.id);
-		this.project = project;
-		this.configure();
-		this.renderContent();
-	}
-
-	configure() {}
-	renderContent() {
-		this.element.querySelector('h2')!.textContent = this.project.title;
-		this.element.querySelector('h3')!.textContent = this.project.people.toString();
-		this.element.querySelector('p')!.textContent = this.project.description;
-	}
-}
-
-//ProjectList Class
+// ProjectList Class
 class ProjectList extends Component<HTMLDivElement, HTMLElement> {
 	assignedProjects: Project[];
 
 	constructor(private type: 'active' | 'finished') {
 		super('project-list', 'app', false, `${type}-projects`);
 		this.assignedProjects = [];
+
 		this.configure();
 		this.renderContent();
 	}
@@ -171,15 +154,17 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement> {
 	}
 
 	private renderProjects() {
-		const listEl = document.getElementById(`${this.type}-projects-list`) as HTMLUListElement;
+		const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement;
 		listEl.innerHTML = '';
 		for (const prjItem of this.assignedProjects) {
-			new ProjectItem(this.element.querySelector('ul')!.id, prjItem);
+			const listItem = document.createElement('li');
+			listItem.textContent = prjItem.title;
+			listEl.appendChild(listItem);
 		}
 	}
 }
 
-//projectInput class
+// ProjectInput Class
 class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 	titleInputElement: HTMLInputElement;
 	descriptionInputElement: HTMLInputElement;
@@ -190,7 +175,6 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 		this.titleInputElement = this.element.querySelector('#title') as HTMLInputElement;
 		this.descriptionInputElement = this.element.querySelector('#description') as HTMLInputElement;
 		this.peopleInputElement = this.element.querySelector('#people') as HTMLInputElement;
-
 		this.configure();
 	}
 
@@ -222,7 +206,7 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 		};
 
 		if (!validate(titleValidatable) || !validate(descriptionValidatable) || !validate(peopleValidatable)) {
-			alert('try again');
+			alert('Invalid input, please try again!');
 			return;
 		} else {
 			return [enteredTitle, enteredDescription, +enteredPeople];
@@ -248,7 +232,5 @@ class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 }
 
 const prjInput = new ProjectInput();
-
 const activePrjList = new ProjectList('active');
-
 const finishedPrjList = new ProjectList('finished');
